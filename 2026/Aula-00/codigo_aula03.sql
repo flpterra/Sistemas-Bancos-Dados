@@ -1,4 +1,18 @@
--- Active: 1787702328748@@127.0.0.1@5432@bd_vendas@public
+-- Active: 1788215144847@@127.0.0.1@5432@bd_vendas@public
+DROP TABLE IF EXISTS vendas_itens;
+
+CREATE TABLE vendas_itens(
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    venda_id INTEGER NOT NULL,
+    produto_id INTEGER NOT NULL,
+    valor_unitario NUMERIC(10, 2) NOT NULL,
+    data_venda DATE NOT NULL,
+    observacao TEXT 
+);
+
+SELECT * FROM vendas_itens;
+
+-- Active: 1787177433004@@127.0.0.1@5432@bd_vendas@public
 DROP TABLE IF EXISTS vendas_itens;
 
 CREATE TABLE vendas_itens(
@@ -76,16 +90,16 @@ INSERT INTO vendas_itens (venda_id, produto_id, valor_unitario, data_venda, obse
 (2016,  7, 199.99, '2025-09-16', 'Entrega agendada');
 
 
-SELECT  
-    venda_id,
-    produto_id,
-    valor_unitario,
-    data_venda
+-- Busca (venda_id -> Id da Venda, produto_id -> ID Produto, valor_unitario -> Valor, data_venda -> Data)
+SELECT
+    venda_id AS "Id da Venda",
+    produto_id AS "Id Produto",
+    valor_unitario AS "Valor",
+    data_venda AS "Data"
 FROM
     vendas_itens;
 
-
--- Todos os itens de uma venda (2001)
+-- Todos os itens da venda 2001 (venda_id / data_venda / produto_id / valor_unitario)
 
 SELECT
     venda_id,
@@ -98,29 +112,124 @@ WHERE
     venda_id = 2001;
 
 
+
 SELECT
+    id,
+    venda_id,
     produto_id,
     produto_id / 3 AS divisao_inteira,
     produto_id % 3 AS resto,
     produto_id / 3.0 AS divisao_decimal
 FROM
     vendas_itens
-WHERE   
+WHERE
     produto_id = 10;
 
-
+-- Apresentar coluna valor_venda contabilizando 10% a mais do valor de cada produto
 SELECT
+    venda_id,
+    data_venda,
     produto_id,
     valor_unitario,
-    valor_unitario *1.1 AS "Valor 10%"
+    valor_unitario * 1.1 AS valor_venda
 FROM
     vendas_itens;
 
 
-SELECT 
+SELECT
     'Venda ' || venda_id || ', produto ' || produto_id AS "Descrição",
     valor_unitario
 FROM
     vendas_itens
-WHERE   
-    venda_id = 2010;
+WHERE
+    venda_id = 2001;
+
+
+-- Precedências entre AND e OR
+SELECT
+    venda_id,
+    produto_id,
+    valor_unitario,
+    data_venda
+FROM
+    vendas_itens
+WHERE
+    data_venda = '2025-09-01' OR data_venda = '2025-09-02' AND valor_unitario > 100;
+
+
+SELECT
+    venda_id,
+    produto_id,
+    valor_unitario,
+    data_venda
+FROM
+    vendas_itens
+WHERE
+    (data_venda = '2025-09-01' OR data_venda = '2025-09-02') AND valor_unitario > 100;
+
+
+SELECT
+    venda_id,
+    produto_id,
+    valor_unitario,
+    data_venda
+FROM
+    vendas_itens
+WHERE
+    --valor_unitario >= 50 AND valor_unitario <=100;
+    valor_unitario BETWEEN 50 AND 100
+ORDER BY
+    valor_unitario DESC;
+
+SELECT
+    venda_id,
+    produto_id,
+    valor_unitario,
+    data_venda
+FROM
+    vendas_itens
+WHERE
+    data_venda BETWEEN '2025-09-01' AND '2025-09-03'
+ORDER BY
+    data_venda;
+
+    
+
+
+SELECT 
+    venda_id,
+    produto_id,
+    valor_unitario,
+    data_venda
+FROM
+    vendas_itens
+WHERE
+    produto_id IN (1,3,6);
+
+
+SELECT 
+    venda_id,
+    produto_id,
+    valor_unitario,
+    data_venda
+FROM
+    vendas_itens
+WHERE
+    produto_id IN (1,3,6)
+    AND (data_venda = '2025-09-01' OR data_venda = '2025-09-10'); 
+
+
+
+-- LIKE -> Comparação de padrões 
+
+SELECT
+    venda_id,
+    produto_id,
+    observacao
+FROM
+    vendas_itens
+WHERE
+    -- % Qualquer sequencia de caracteres
+    -- _ Exatamente um caractere, qualquer que seja
+    observacao LIKE 'Entrega%';
+
