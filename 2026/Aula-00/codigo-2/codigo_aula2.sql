@@ -1,5 +1,4 @@
--- Active: 1787702328748@@127.0.0.1@5432@bd_aula@public
-
+-- Active: 1787177433004@@127.0.0.1@5432@bd_aula@public
 DROP TABLE IF EXISTS notas_alunos;
 
 CREATE TABLE notas_alunos(
@@ -12,9 +11,7 @@ CREATE TABLE notas_alunos(
     data_avaliacao DATE NOT NULL
 );
 
-
 SELECT * FROM notas_alunos;
-
 
 INSERT INTO notas_alunos (aluno_nome, turma, disciplina, nota, faltas, data_avaliacao) VALUES
 ('Aluno 01','A','Matematica', 85, 2, '2025-09-01'),
@@ -68,88 +65,25 @@ INSERT INTO notas_alunos (aluno_nome, turma, disciplina, nota, faltas, data_aval
 ('Aluno 49','A','Sistemas', 94, 0, '2025-09-11'),
 ('Aluno 50','B','Matematica', 61, 2, '2025-09-11');
 
-SELECT 
-    aluno_nome,
-    turma,
-    disciplina,
-    nota,
-    faltas
+-- Retorne os valores de aluno_nome, turma, disciplina e nota
+SELECT
+    aluno_nome AS "Alunos",
+    turma AS "Turma",
+    disciplina AS "Disciplina",
+    nota AS "Notas"
 FROM
     notas_alunos;
 
-
---Comando para retornar (notas, discipina, aluno_nome)  ordem notas ASC;
-
-SELECT aluno_nome, disciplina, nota FROM notas_alunos ORDER BY nota DESC LIMIT 10;
-
-
--- Alunos com notas > 90
-SELECT 
-    disciplina,aluno_nome ,turma ,nota
-FROM 
-    notas_alunos
-WHERE 
-    nota < 60;
-
-
--- Alunos da discplina de 'Matemática' com notas >= 70;
-
+-- Comando para retornar (nota, disciplina, aluno_nome) na ordem das notas do tipo 'ASC'
 SELECT
-    aluno_nome, disciplina, nota
+    nota AS "Notas",
+    disciplina AS "Disciplina",
+    aluno_nome AS "Alunos"
 FROM
     notas_alunos
-WHERE
-    disciplina = 'Matematica' AND
-    nota >= 70
-LIMIT 
-    02;
+ORDER BY
+    nota ASC
+LIMIT
+    10;
 
-
-SELECT
-    aluno_nome, disciplina, nota
-FROM
-    notas_alunos
-WHERE
-    disciplina = 'Portugues' AND
-    nota >= 90
-LIMIT 
-    02;
-
-
-SELECT 
-    disciplina,
-    AVG(nota) AS "Média"
-FROM
-    notas_alunos
-GROUP BY                
-    disciplina;
-
-
-
-/* Duas funções  de agregação
-(AVG) Média aritmética dos valores do grupo
-(COUNT(*)) Quantidade de linhas do grupo
-*/
-
-SELECT  
-    disciplina,
-    COUNT(*) AS "Avaliações",
-    AVG(nota) AS "Média"
-FROM
-    notas_alunos    
-GROUP BY
-    disciplina;
-
-
-
-
-SELECT  
-    disciplina,
-    COUNT(*) AS "Avaliações",
-    ROUND(AVG(nota), 1) AS "Média"
-FROM
-    notas_alunos    
-GROUP BY
-    disciplina;
-
-
+-- Alunos com notas >= 90

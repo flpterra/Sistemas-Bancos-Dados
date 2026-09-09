@@ -1,4 +1,5 @@
--- Active: 1788306729234@@127.0.0.1@5432@bd_vendas@public
+-- Active: 1787177433004@@127.0.0.1@5432@bd_vendas@public
+
 DROP TABLE IF EXISTS vendas_itens;
 
 CREATE TABLE vendas_itens(
@@ -181,6 +182,21 @@ WHERE
 ORDER BY
     valor_unitario DESC;
 
+
+
+SELECT
+    venda_id,
+    produto_id,
+    valor_unitario,
+    data_venda
+FROM
+    vendas_itens
+WHERE
+    --valor_unitario >= 50 AND valor_unitario <=100;
+    valor_unitario NOT BETWEEN 50 AND 100
+ORDER BY
+    valor_unitario DESC;
+
 SELECT
     venda_id,
     produto_id,
@@ -193,10 +209,8 @@ WHERE
 ORDER BY
     data_venda;
 
-    
 
-
-SELECT 
+SELECT
     venda_id,
     produto_id,
     valor_unitario,
@@ -204,10 +218,12 @@ SELECT
 FROM
     vendas_itens
 WHERE
-    produto_id IN (1,3,6);
+    data_venda BETWEEN '2025-09-01' AND '2025-09-03'
+ORDER BY
+    data_venda;
 
 
-SELECT 
+SELECT
     venda_id,
     produto_id,
     valor_unitario,
@@ -215,13 +231,36 @@ SELECT
 FROM
     vendas_itens
 WHERE
-    produto_id IN (1,3,6)
-    AND (data_venda = '2025-09-01' OR data_venda = '2025-09-10'); 
+    produto_id IN (1, 3, 6)
+ORDER BY
+    produto_id;
+
+SELECT
+    venda_id,
+    produto_id,
+    valor_unitario,
+    data_venda
+FROM
+    vendas_itens
+WHERE
+    produto_id NOT IN (1, 3, 6)
+ORDER BY
+    produto_id;
+
+SELECT
+    venda_id,
+    produto_id,
+    valor_unitario,
+    data_venda
+FROM
+    vendas_itens
+WHERE
+    produto_id NOT IN (1, 3, 6)
+    --AND (data_venda = '2025-09-01' OR data_venda = '2025-09-10');
+    AND (data_venda NOT IN ('2025-09-01', '2025-09-10'));
 
 
-
--- LIKE -> Comparação de padrões 
-
+-- LIKE -> Comparação de Padrões
 SELECT
     venda_id,
     produto_id,
@@ -229,143 +268,21 @@ SELECT
 FROM
     vendas_itens
 WHERE
-    -- % Qualquer sequencia de caracteres
+    -- % Qualquer sequência de caracteres
     -- _ Exatamente um caractere, qualquer que seja
-    observacao LIKE 'Entrega%';
+    -- observacao LIKE 'Entrega%';
+    -- observacao LIKE '%loja%';
+    -- observacao LIKE '_ntrega ex%';
+    -- observacao ILIKE 'entrega%';
+    observacao NOT LIKE 'Entrega%';
 
 
-
-SELECT
-    venda_id,
-    produto_id,
-    COALESCE(observacao, 'Sem observação') AS "Observação"
-FROM
-    vendas_itens
-WHERE
-    venda_id = 2001;
-
-
-SELECT DISTINCT
-    valor_unitario
-FROM    
-    vendas_itens
-ORDER BY
-    valor_unitario;
-
-
-SELECT DISTINCT
-    produto_id
-FROM    
-    vendas_itens
-ORDER BY
-    produto_id;
-
-    
-
-SELECT DISTINCT
-    venda_id,
-    produto_id,
-    valor_unitario
-FROM    
-    vendas_itens
-ORDER BY
-    valor_unitario DESC,
-    venda_id ASC,
-    produto_id;
-
-
+-- NULL
 SELECT
     venda_id,
     observacao
 FROM
     vendas_itens
-ORDER BY
-    observacao ASC NULLS FIRST;
-
-
-
-SELECT
-    venda_id,
-    produto_id,
-    valor_unitario
-FROM
-    vendas_itens
-ORDER BY
-    valor_unitario DESC,
-    venda_id ASC,
-    produto_id ASC
-LIMIT 5 OFFSET 1;
-
-
-
-SELECT
-    COUNT(*) AS Itens,
-    COUNT(observacao) AS Itens_com_observacao,
-    COUNT(DISTINCT venda_id) AS vendas,
-    COUNT(DISTINCT produto_id) AS produtos,
-    SUM(valor_unitario) AS soma,
-    ROUND(AVG(valor_unitario)) AS "média",
-    MIN(valor_unitario) AS menor_valor_unitario,
-    MAX(valor_unitario) AS maior_valor_unitario
-FROM
-    vendas_itens;
-
-
-
-
-SELECT
-    venda_id,
-    SUM(valor_unitario) AS valor_total
-FROM
-    vendas_itens
-GROUP BY
-    venda_id
-ORDER BY
-    valor_total ASC;
-
-
--- Verificar  valor final de todas as vendas de cada produto
--- Verificar qtd de vendas dos produtos
-
-SELECT
-    produto_id,
-    SUM(valor_unitario) AS valor_final,
-    COUNT(*) AS vezes_venddo
-FROM
-    vendas_itens
-GROUP BY
-    produto_id
-ORDER BY
-    valor_final,
-    vezes_vendido;
-
-
-SELECT
-    venda_id,
-    SUM(valor_unitario) AS valor_total,
-    COUNT(*) AS items
-FROM
-    vendas_itens
-GROUP BY
-    venda_id
-HAVING
-    SUM(valor_unitario) > 400
-ORDER BY 
-    valor_total DESC;
-
-
-
-
-
-SELECT
-    venda_id,
-    COUNT(*) AS items,
-    SUM(valor_unitario) AS valor_total
-FROM
-    vendas_itens
-GROUP BY
-    venda_id
-HAVING
-    COUNT(*) >= 5
-ORDER BY 
-    venda_id;
+WHERE
+    observacao NOT IN ('Entrega expressa')
+    OR observacao IS NULL;
