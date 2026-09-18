@@ -1,4 +1,4 @@
--- Active: 1789425099319@@127.0.0.1@5432@bd_hortifruti@public
+-- Active: 1789756988650@@127.0.0.1@5432@bd_hortifruti@public
 CREATE DATABASE bd_hortifruti;
 
 DROP TABLE IF EXISTS itens_venda;
@@ -99,8 +99,7 @@ SELECT
 FROM
     itens_venda
 WHERE 
-    categoria = 'Legume' OR 'Verdura',
-    valor_unitario IN 3.000 BETWEEN 5.000
+    categoria = 'Legume' OR categoria ='Verdura' AND valor_unitario BETWEEN 3.000 AND 5.000
 ORDER BY
     valor_unitario DESC,
     venda_id;
@@ -148,4 +147,117 @@ LIMIT
     5;
 
 
+-- Consulta 6
+SELECT
+    venda_id AS numero,
+    data_venda AS data,
+    COALESCE(bairro_entrega, 'Retirada no balcao') AS destino,
+    COUNT(*) AS itens,
+    ROUND(SUM(quantidade * valor_unitario), 2) AS valor_total
+FROM
+    itens_venda
+GROUP BY
+    venda_id,
+    data_venda,
+    bairro_entrega
+ORDER BY
+    valor_total DESC;
 
+
+-- Consulta 7:
+SELECT
+    data_venda AS data,
+    COUNT(DISTINCT venda_id) AS vendas,
+    COUNT(*) AS itens,
+    ROUND(SUM(quantidade * valor_unitario), 2) AS faturamento
+FROM
+    itens_venda
+GROUP BY
+    data_venda
+ORDER BY
+    data_venda;
+
+
+-- Consulta 8:
+SELECT
+    produto_id,
+    produto_nome,
+    unidade,
+    SUM(quantidade) AS qtd_total,
+    ROUND(SUM(quantidade * valor_unitario), 2) AS faturamento,
+    ROUND(AVG(valor_unitario), 2) AS media_simples,
+    ROUND(SUM(quantidade * valor_unitario) / SUM(quantidade), 2) AS media_ponderada
+FROM
+    itens_venda
+GROUP BY
+    produto_id,
+    produto_nome,
+    unidade
+ORDER BY
+    faturamento DESC;
+
+
+-- Consulta 9:
+SELECT
+    categoria,
+    COUNT(*) AS itens,
+    SUM(quantidade) AS qtd_total,
+    ROUND(SUM(quantidade * valor_unitario), 2) AS faturamento
+FROM
+    itens_venda
+GROUP BY
+    categoria,
+    unidade
+ORDER BY
+    categoria;
+
+
+-- Consulta 10:
+SELECT
+    bairro_entrega,
+    COUNT(DISTINCT venda_id) AS entregas,
+    ROUND(SUM(quantidade * valor_unitario), 2) AS faturamento
+FROM
+    itens_venda
+WHERE
+    bairro_entrega IS NOT NULL
+GROUP BY
+    bairro_entrega
+HAVING
+    SUM(quantidade * valor_unitario) > 40
+ORDER BY
+    faturamento DESC;
+
+
+-- Consulta 11:
+SELECT
+    venda_id,
+    ROUND(SUM(quantidade * valor_unitario), 2) AS total_arredondado,
+    SUM(ROUND(quantidade * valor_unitario, 2)) AS soma_dos_itens_arredondados
+FROM
+    itens_venda
+GROUP BY
+    venda_id
+HAVING
+    ROUND(SUM(quantidade * valor_unitario), 2) <> SUM(ROUND(quantidade * valor_unitario, 2))
+ORDER BY
+    venda_id;
+
+
+
+-- Questão 1
+--As colunas data_venda e bairro_entrega repetem, em várias linhas, informações que pertencem apnas à venda. As colunas produto_id, produto_nome, categoria e unidade repetem informações que pertencem apenas ao produto. O valor_unitario também pode se repetir em várias linhas mas não pertence apenas ao produto, pois o preço pode mudar de uma venda para outra
+
+-- Questão 2
+--Quantidade deve ser sempre maior que zero e que os produtos vendidos por unidade devem possuir quantidade inteira
+
+INSERT INTO itens_venda
+(venda_id, data_venda, bairro_entrega, produto_id, produto_nome,
+ categoria, unidade, quantidade, valor_unitario)
+VALUES
+(3018, '2026-08-08', NULL, 1, 'Banana prata',
+ 'Fruta', 'Kg', -1.000, 5.99);
+
+
+-- Questão 3
+-- No morango a média ponderada é menor porque as maiores quantidades foram vendidas por preços menores. No abacaxi é maior porque as maiores quantidades foram vendidas por preços maiores. No cheiro-verde, as duas médias são iguais porque as quantidades vendidas foram iguais nos diferentes preços
