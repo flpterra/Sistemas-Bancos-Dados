@@ -1,24 +1,25 @@
--- Active: 1789756988650@@127.0.0.1@5432@bd_hortifruti@public
-CREATE DATABASE bd_hortifruti;
+-- Active: 1791332059105@@127.0.0.1@5432@bd_hortifruti@public
 
 DROP TABLE IF EXISTS itens_venda;
-CREATE TABLE itens_venda (
+DROP TABLE IF EXISTS vendas;
+DROP TABLE IF EXISTS produtos;
+
+CREATE TABLE itens_venda(
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     venda_id INTEGER NOT NULL,
     data_venda DATE NOT NULL,
-    bairro_entrega TEXT, -- Nem todos as vendas são com entregas, portanto não precisa ser NOT NULL
+    bairro_entrega TEXT,
     produto_id INTEGER NOT NULL,
     produto_nome TEXT NOT NULL,
-    categoria VARCHAR(10) NOT NULL,
+    categoria TEXT NOT NULL,
     unidade TEXT NOT NULL,
-    quantidade NUMERIC(10,3),
-    valor_unitario NUMERIC(10, 2) NOT NULL -- Restringe o valor a números possíveis dentro do contexto do comércio
+    quantidade NUMERIC(10, 3) NOT NULL,
+    valor_unitario NUMERIC(10, 2) NOT NULL
 );
 
-
 INSERT INTO itens_venda
- (venda_id, data_venda, bairro_entrega, produto_id, produto_nome,
- categoria, unidade, quantidade, valor_unitario)
+(venda_id, data_venda, bairro_entrega, produto_id, produto_nome,
+categoria, unidade, quantidade, valor_unitario)
 VALUES
 -- 2026-08-03, segunda-feira
 (3001, '2026-08-03', NULL, 1, 'Banana prata', 'Fruta', 'Kg', 1.235, 5.99),
@@ -65,24 +66,24 @@ VALUES
 -- 2026-08-08, sabado
 (3015, '2026-08-08', NULL, 6, 'Batata', 'Legume', 'Kg', 1.250, 5.49),
 (3016, '2026-08-08', NULL, 5, 'Tomate', 'Legume', 'Kg', 1.115, 8.99),
-(3016, '2026-08-08', NULL, 7, 'Batata-doce', 'Legume', 'Kg', 1.360, 4.79),
+(3016, '2026-08-08', NULL, 7, 'Batata-doce', 'Legume', 'Kg', 1.360, 4.79);
+
+-- Venda 3017, realizada em 08/08/2026, retirada no balcão. Itens: 1,340 kg de tomate, a R$ 8,99 o quilograma, dois pés de alface crespa, a R$ 3,49 cada, e uma bandeja de morango, a R$ 9,90.
+
+INSERT INTO itens_venda(venda_id, data_venda, bairro_entrega, produto_id, produto_nome, categoria, unidade, quantidade, valor_unitario)
+VALUES
 (3017, '2026-08-08', NULL, 5, 'Tomate', 'Legume', 'Kg', 1.340, 8.99),
-(3017, '2026-08-08', NULL, 10, 'Alface crespa', 'Verdura', 'UN', 2.000, 3.49),
-(3017, '2026-08-08', NULL, 4, 'Morango', 'Fruta', 'UN', 1.000, 9.90);
+(3017, '2026-08-08', NULL, 10, 'Alface crespa', 'Verdura', 'UN', 2, 3.49),
+(3017, '2026-08-08', NULL, 4, 'Morango', 'Fruta', 'UN', 1, 9.9);
 
+SELECT * FROM itens_venda;
 
-SELECT
-    *
-FROM
-    itens_venda;
+-- Consulta 1. Listar, sem repetição, o código, o nome, a categoria e a unidade de medida dos produtos vendidos, ordenados pela categoria e, dentro dela, pelo nome do produto. O resultado é o cadastro de produtos do hortifrúti, reconstruído a partir dos itens.
 
-
-
--- Consulta 1:
-SELECT
+SELECT DISTINCT
     produto_id,
-    categoria,
     produto_nome,
+    categoria,
     unidade
 FROM
     itens_venda
@@ -91,20 +92,23 @@ ORDER BY
     produto_nome;
 
 
--- Consulta 2:
+-- Consulta 2. Listar venda_id, produto_nome e valor_unitario dos itens de produtos das categorias Legume e Verdura cujo valor unitário está entre 3.00 e 5.00, inclusive os extremos. Usar IN e BETWEEN. Ordenar pelo valor unitário, do maior para o menor, e, em caso de empate, pelo número da venda.
+
 SELECT
     venda_id,
     produto_nome,
     valor_unitario
 FROM
     itens_venda
-WHERE 
-    categoria = 'Legume' OR categoria ='Verdura' AND valor_unitario BETWEEN 3.000 AND 5.000
+WHERE
+    categoria IN ('Legume', 'Verdura') AND
+    valor_unitario BETWEEN 3 AND 5
 ORDER BY
     valor_unitario DESC,
     venda_id;
 
--- Consulta 3:
+-- Consulta 3. Listar venda_id, data_venda, produto_nome e quantidade dos itens cujo nome do produto começa com Batata, ordenados pela data e pelo número da venda.
+
 SELECT
     venda_id,
     data_venda,
@@ -113,45 +117,48 @@ SELECT
 FROM
     itens_venda
 WHERE
-    produto_nome LIKE 'Batata'
+    produto_nome LIKE 'Batata%'
 ORDER BY
     data_venda,
     venda_id;
 
--- Consulta 4:
-SELECT  
+-- Consulta 4. Listar, sem repetição, o número, a data e o bairro de entrega das vendas entregues em domicílio, ordenadas pelo número da venda.
+
+SELECT DISTINCT
     venda_id,
     data_venda,
     bairro_entrega
 FROM
     itens_venda
-WHERE 
+WHERE
     bairro_entrega IS NOT NULL
 ORDER BY
     venda_id;
 
--- Consulta 5:
+
+-- Consulta 5. O valor de cada item é quantidade * valor_unitario, arredondado a duas casas (valor_item). Com os itens ordenados pelo valor, do maior para o menor, e, em caso de empate, pelo número da venda, apresentar a segunda página de cinco itens, isto é, do sexto ao décimo. Colunas: venda_id, produto_nome, quantidade, unidade, valor_unitario e valor_item.
+
 SELECT
     venda_id,
     produto_nome,
     quantidade,
     unidade,
     valor_unitario,
-    ROUND(quantidade * valor_unitario, 2) AS valor_item
+    ROUND((quantidade * valor_unitario),2) AS valor_item
 FROM
     itens_venda
 ORDER BY
     valor_item DESC,
     venda_id
 LIMIT
-    5;
+    5 OFFSET 5;
 
+-- Consulta 6. Apresentar, para cada venda, o número, a data, o destino (destino), a quantidade de itens (itens) e o valor total (valor_total), ordenado pelo valor total, do maior para o menor. O destino é o bairro de entrega ou, nas vendas sem entrega, o texto Retirada no balcao.
 
--- Consulta 6
 SELECT
-    venda_id AS numero,
-    data_venda AS data,
-    COALESCE(bairro_entrega, 'Retirada no balcao') AS destino,
+    venda_id,
+    data_venda,
+    COALESCE(bairro_entrega,'Retirada no Balcao') destino,
     COUNT(*) AS itens,
     ROUND(SUM(quantidade * valor_unitario), 2) AS valor_total
 FROM
@@ -163,13 +170,12 @@ GROUP BY
 ORDER BY
     valor_total DESC;
 
-
--- Consulta 7:
+-- Consulta 7. Apresentar, para cada dia, a data, a quantidade de vendas distintas (vendas), a quantidade de itens (itens) e o faturamento do dia (faturamento), ordenado pela data.
 SELECT
-    data_venda AS data,
-    COUNT(DISTINCT venda_id) AS vendas,
+    data_venda,
+    COUNT(DISTINCT venda_id),
     COUNT(*) AS itens,
-    ROUND(SUM(quantidade * valor_unitario), 2) AS faturamento
+    ROUND(SUM(quantidade * valor_unitario),2) AS faturamento
 FROM
     itens_venda
 GROUP BY
@@ -177,16 +183,16 @@ GROUP BY
 ORDER BY
     data_venda;
 
+-- Consulta 8. Apresentar, para cada produto, o código, o nome, a unidade de medida, a quantidade total vendida (qtd_total), o faturamento (faturamento), a média simples do valor unitário (media_simples) e o valor médio recebido por unidade de medida vendida (media_ponderada), ordenado pelo faturamento, do maior para o menor.
 
--- Consulta 8:
 SELECT
     produto_id,
     produto_nome,
     unidade,
-    SUM(quantidade) AS qtd_total,
-    ROUND(SUM(quantidade * valor_unitario), 2) AS faturamento,
-    ROUND(AVG(valor_unitario), 2) AS media_simples,
-    ROUND(SUM(quantidade * valor_unitario) / SUM(quantidade), 2) AS media_ponderada
+    ROUND(SUM(quantidade), 3) AS qtd_total,
+    ROUND(SUM(quantidade * valor_unitario),2) AS faturamento,
+    ROUND(AVG(valor_unitario),2) AS media_simples,
+    ROUND(SUM(quantidade * valor_unitario)/SUM(quantidade),2) AS media_ponderada
 FROM
     itens_venda
 GROUP BY
@@ -196,13 +202,14 @@ GROUP BY
 ORDER BY
     faturamento DESC;
 
+-- Consulta 9. Apresentar, para cada categoria, a quantidade de itens (itens), a quantidade total vendida (qtd_total) e o faturamento (faturamento), ordenado pela categoria. A quantidade total só tem significado quando soma valores da mesma unidade de medida, e o resultado deve respeitar essa regra (aula prática 04, seção 7.4).
 
--- Consulta 9:
 SELECT
     categoria,
+    unidade,
     COUNT(*) AS itens,
     SUM(quantidade) AS qtd_total,
-    ROUND(SUM(quantidade * valor_unitario), 2) AS faturamento
+    ROUND(SUM(quantidade * valor_unitario),2) AS faturamento
 FROM
     itens_venda
 GROUP BY
@@ -211,11 +218,11 @@ GROUP BY
 ORDER BY
     categoria;
 
+-- Consulta 10. Considerando apenas as vendas com entrega, apresentar, para cada bairro, a quantidade de vendas entregues (entregas) e o faturamento (faturamento), somente dos bairros cujo faturamento passa de 40.00, ordenado pelo faturamento, do maior para o menor.
 
--- Consulta 10:
 SELECT
     bairro_entrega,
-    COUNT(DISTINCT venda_id) AS entregas,
+    COUNT(DISTINCT venda_id) AS qtd_entregas,
     ROUND(SUM(quantidade * valor_unitario), 2) AS faturamento
 FROM
     itens_venda
@@ -228,12 +235,12 @@ HAVING
 ORDER BY
     faturamento DESC;
 
+-- Consulta 11. Apresentar as vendas em que o valor total arredondado a duas casas (total_arredondado) é diferente da soma dos valores dos itens arredondados um a um (soma_dos_itens_arredondados), com as duas colunas, ordenadas pelo número da venda (aula prática 04, seção 6.3).
 
--- Consulta 11:
 SELECT
     venda_id,
     ROUND(SUM(quantidade * valor_unitario), 2) AS total_arredondado,
-    SUM(ROUND(quantidade * valor_unitario, 2)) AS soma_dos_itens_arredondados
+    SUM(ROUND(quantidade * valor_unitario, 2)) AS soma_itens_arredondados
 FROM
     itens_venda
 GROUP BY
@@ -244,20 +251,267 @@ ORDER BY
     venda_id;
 
 
+-- Continuacao pratica 1
 
--- Questão 1
---As colunas data_venda e bairro_entrega repetem, em várias linhas, informações que pertencem apnas à venda. As colunas produto_id, produto_nome, categoria e unidade repetem informações que pertencem apenas ao produto. O valor_unitario também pode se repetir em várias linhas mas não pertence apenas ao produto, pois o preço pode mudar de uma venda para outra
+SELECT
+    COUNT(*) AS linhas
+FROM
+    itens_venda;
 
--- Questão 2
---Quantidade deve ser sempre maior que zero e que os produtos vendidos por unidade devem possuir quantidade inteira
 
-INSERT INTO itens_venda
-(venda_id, data_venda, bairro_entrega, produto_id, produto_nome,
- categoria, unidade, quantidade, valor_unitario)
+SELECT
+    produto_id,
+    produto_nome,
+    categoria,
+    unidade
+FROM
+    itens_venda
+ORDER BY
+    produto_id;
+
+-- O tomate e a tabela única
+SELECT
+    id,
+    venda_id,
+    produto_id,
+    produto_nome,
+    categoria
+FROM
+    itens_venda
+WHERE
+    produto_id = 5
+ORDER BY
+    venda_id;
+
+-- UPDATE
+UPDATE itens_venda
+SET categoria = 'Fruta'
+WHERE
+    produto_id = 5;
+
+-- Tabela produto
+CREATE TABLE produto(
+    id  INTEGER PRIMARY KEY,
+    nome TEXT NOT NULL UNIQUE,
+    categoria TEXT NOT NULL CHECK(categoria IN ('Fruta', 'Legume', 'Verdura')),
+    unidade TEXT NOT NULL CHECK(unidade IN('Kg', 'UN'))
+);
+
+INSERT INTO produto(id, nome, categoria, unidade)
+SELECT DISTINCT
+    produto_id,
+    produto_nome,
+    categoria,
+    unidade
+FROM
+    itens_venda;
+
+SELECT
+    *
+FROM
+    produto;
+
+-- Ajuste na table itens_venda
+ALTER Table itens_venda
+    ADD CONSTRAINT fk_itens_venda_produto
+    FOREIGN KEY (produto_id) REFERENCES produto(id);
+
+
+ALTER TABLE itens_venda
+    DROP COLUMN produto_nome,
+    DROP COLUMN categoria,
+    DROP COLUMN unidade;
+
+SELECT
+    *
+FROM
+    itens_venda
+
+SELECT
+    *
+FROM
+    produto
+WHERE
+    id = 2;
+
+-- INNER JOIN entre tabelas
+--Itens da venda 3017, com os dados do produto
+SELECT
+    i.id,
+    i.venda_id,
+    p.nome as produto,
+    p.categoria,
+    p.unidade,
+    i.quantidade,
+    i.valor_unitario
+FROM
+        itens_venda AS i
+    INNER JOIN
+        produto AS p
+    ON p.id = i.produto_id
+WHERE
+    i.venda_id = 3017
+ORDER BY
+    i.id;
+
+-- Realizar a consulta 8 da prática.
+-- Consulta 8. Apresentar, para cada produto, o código, o nome, a unidade de medida, a quantidade total vendida (qtd_total), o faturamento (faturamento), a média simples do valor unitário (media_simples) e o valor médio recebido por unidade de medida vendida (media_ponderada), ordenado pelo faturamento, do maior para o menor.
+SELECT
+    p.id,
+    p.nome,
+    p.unidade,
+    SUM(i.quantidade) AS qtd_total,
+    ROUND(SUM(i.quantidade * i.valor_unitario),2) AS faturamento,
+    ROUND(AVG(i.valor_unitario),2) AS media_simples,
+    ROUND((SUM(i.quantidade * i.valor_unitario)/SUM(i.quantidade)),2) AS media_ponderada
+FROM
+        produto AS p
+    INNER JOIN
+        itens_venda AS i
+    ON
+        --i.produto_id = p.id
+        p.id = i.produto_id
+GROUP BY
+    p.id,
+    p.nome,
+    p.unidade
+ORDER BY
+    faturamento DESC;
+
+-- Consulta 9. Apresentar, para cada categoria, a quantidade de itens (itens), a quantidade total vendida (qtd_total) e o faturamento (faturamento), ordenado pela categoria. A quantidade total só tem significado quando soma valores da mesma unidade de medida, e o resultado deve respeitar essa regra (aula prática 04, seção 7.4).
+SELECT
+    p.categoria,
+    COUNT(*) AS qtd_itens,
+    SUM(i.quantidade) AS quantidade,
+    ROUND(SUM(i.quantidade * i.valor_unitario),2) AS faturamento
+FROM
+        itens_venda AS i
+    INNER JOIN
+        produto AS p
+    ON
+        p.id = i.produto_id
+GROUP BY
+    p.categoria,
+    p.unidade
+ORDER BY
+    categoria;
+
+-- LEFT JOIN: produto que não estão em itens_venda, quantidade vendida de cada produto
+
+SELECT
+    p.id,
+    p.nome,
+    COUNT(i.id) AS itens_vendidos
+FROM
+        produto AS p
+    LEFT JOIN
+        itens_venda AS i
+    ON
+        i.produto_id = p.id
+GROUP BY
+    p.id,
+    p.nome
+ORDER BY
+    itens_vendidos,
+    p.id;
+
+INSERT INTO produto(id, nome, categoria, unidade)
+VALUES (13, 'Pimentao', 'Legume', 'Kg');
+
+
+SELECT
+    *
+FROM
+    itens_venda
+ORDER BY
+    id;
+
+CREATE TABLE vendas(
+    id  INTEGER PRIMARY KEY,
+    data_venda DATE NOT NULL,
+    bairro_entrega TEXT
+);
+
+
+INSERT INTO vendas(id, data_venda, bairro_entrega)
+SELECT DISTINCT
+    venda_id,
+    data_venda,
+    bairro_entrega
+FROM
+    itens_venda;
+
+SELECT
+    *
+FROM
+    vendas;
+
+
+ALTER TABLE itens_venda
+    ADD CONSTRAINT fk_itens_venda_vendas
+    FOREIGN KEY (venda_id) REFERENCES vendas(id);
+
+ALTER TABLE itens_venda
+    DROP COLUMN data_venda,
+    DROP COLUMN bairro_entrega;
+
+
+-- O preço do tomate ao longo da semana
+-- data_venda, quantidade, valor_unitario
+
+
+SELECT
+    v.data_venda,
+    i.quantidade,
+    i.valor_unitario,
+    p.nome
+
+FROM
+    vendas AS v 
+    INNER JOIN itens_venda AS i ON i.venda_id = v.id
+    INNER JOIN produto AS p ON i.produto_id = p.id
+WHERE
+    p.id = 5
+ORDER BY
+    data_venda;
+
+
+
+ALTER TABLE itens_venda 
+    ADD CONSTRAINT uq_itens_venda_venda_produto
+    UNIQUE (venda_id, produto_id);
+
+
+ALTER TABLE itens_venda
+    ADD CONSTRAINT ck_itens_venda_quantidade
+    CHECK (quantidade > 0);
+
+
+-- Valor total de cada venda
+-- venda_id, data_venda, destino, itens, valor_total
+
+SELECT
+    v.id,
+    v.data_venda,
+    COALESCE(v.bairro_entrega, 'Retirada no balcao') AS destino,
+    COUNT(*) as itens,
+    ROUND(SUM(i.quantidade * i.valor_unitario), 2) AS valor_total    
+FROM vendas AS v INNER JOIN itens_venda AS i ON i.venda_id = v.id
+GROUP BY
+    v.id,
+    v.data_venda,
+    v.bairro_entrega
+ORDER BY
+    valor_total DESC;
+
+
+
+INSERT INTO vendas(id, data_venda, bairro_entrega)
+VALUES(3018, '2026-08-10', 'Centro');
+
+
+INSERT INTO itens_venda(venda_id, produto_id, quantidade, valor_unitario)
 VALUES
-(3018, '2026-08-08', NULL, 1, 'Banana prata',
- 'Fruta', 'Kg', -1.000, 5.99);
-
-
--- Questão 3
--- No morango a média ponderada é menor porque as maiores quantidades foram vendidas por preços menores. No abacaxi é maior porque as maiores quantidades foram vendidas por preços maiores. No cheiro-verde, as duas médias são iguais porque as quantidades vendidas foram iguais nos diferentes preços
+(3018, 13, 0.450, 9.90),
+(3018, 5, 1.120, 8.89), 
+(3018, 1, 1.500, 8.00);
