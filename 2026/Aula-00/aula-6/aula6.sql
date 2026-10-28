@@ -1,4 +1,5 @@
--- Active: 1792541173419@@127.0.0.1@5432@db_plano_saude@public
+-- Active: 1793147537676@@127.0.0.1@5432@db_plano_saude@public
+-- Recomeco: primeiro o que depende, depois o que e referenciado
 DROP TABLE IF EXISTS planilha_atendimento;
 DROP VIEW  IF EXISTS vw_dependente;
 DROP VIEW  IF EXISTS vw_consulta;
@@ -12,8 +13,6 @@ DROP TABLE IF EXISTS especialidade;
 DROP TABLE IF EXISTS convenio;
 DROP TABLE IF EXISTS pessoa;
 
-
-
 -- Regra 1. O endereco composto vira quatro colunas
 CREATE TABLE pessoa (
     id              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -26,15 +25,12 @@ CREATE TABLE pessoa (
     cidade          TEXT    NOT NULL
 );
 
-
 -- Regra 2. Uma linha por telefone
 CREATE TABLE telefone (
     pessoa_id INTEGER NOT NULL REFERENCES pessoa (id),
     numero    TEXT    NOT NULL,
     PRIMARY KEY (pessoa_id, numero)
 );
-
-
 
 -- Regra 5
 CREATE TABLE especialidade (
@@ -47,6 +43,7 @@ CREATE TABLE convenio (
     id   INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nome TEXT    NOT NULL UNIQUE
 );
+
 
 -- Regras 3 e 4. A chave primaria e tambem chave estrangeira para pessoa
 CREATE TABLE paciente (
@@ -70,7 +67,6 @@ CREATE TABLE credenciamento (
     PRIMARY KEY (medico_id, convenio_id)
 );
 
-
 -- Regra 7
 CREATE TABLE consulta (
     id            INTEGER       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -88,7 +84,6 @@ CREATE TABLE exame_solicitado (
     exame       TEXT    NOT NULL,
     PRIMARY KEY (consulta_id, numero)
 );
-
 
 INSERT INTO pessoa (nome, cpf, data_nascimento, logradouro, numero, bairro, cidade)
 VALUES
@@ -133,9 +128,6 @@ VALUES
     ('Vida Plena'), ('Bem Viver'), ('Amparo Saúde'), ('Nova Saúde');
 
 
-
-
-
 INSERT INTO paciente (pessoa_id, data_cadastro, titular_id)
 VALUES
     ( 1, '2026-01-10', NULL), ( 2, '2026-01-15', NULL), ( 3, '2026-02-01', NULL),
@@ -155,3 +147,160 @@ VALUES
     (16, 1, '2024-03-01'), (16, 2, '2024-03-01'), (17, 1, '2023-08-15'),
     (17, 3, '2025-01-10'), (18, 1, '2024-06-01'), (18, 2, '2025-02-01'),
     (19, 1, '2025-05-20'), (20, 3, '2026-02-01');
+
+INSERT INTO consulta (paciente_id, medico_id, convenio_id, data_consulta, valor)
+VALUES
+    ( 1, 16, 1,    '2026-08-03', 180.00),
+    ( 2, 16, 2,    '2026-08-04', 180.00),
+    ( 3, 17, NULL, '2026-08-05', 250.00),
+    ( 4, 18, 1,    '2026-08-06', 200.00),
+    ( 5, 17, 3,    '2026-08-07', 150.00),
+    ( 6, 16, 2,    '2026-08-10', 180.00),
+    ( 7, 18, 1,    '2026-08-11', 200.00),
+    ( 1, 17, 3,    '2026-08-12', 150.00),
+    (12, 19, NULL, '2026-08-13', 280.00),
+    ( 9, 16, 1,    '2026-08-14', 180.00),
+    (10, 16, 2,    '2026-08-17', 180.00),
+    (11, 19, 1,    '2026-08-18', 170.00),
+    ( 2, 17, 3,    '2026-08-19', 150.00),
+    ( 3, 18, NULL, '2026-08-20', 300.00),
+    ( 4, 16, 2,    '2026-08-21', 180.00),
+    ( 5, 17, 1,    '2026-08-24', 150.00),
+    ( 6, 17, 3,    '2026-08-25', 150.00),
+    ( 7, 16, NULL, '2026-08-26', 320.00),
+    ( 8, 18, 2,    '2026-08-27', 200.00),
+    (17, 16, 1,    '2026-08-28', 180.00);
+
+INSERT INTO exame_solicitado (consulta_id, numero, exame)
+VALUES
+    ( 1, 1, 'Eletrocardiograma'),     ( 1, 2, 'Hemograma'),             ( 3, 1, 'Hemograma'),
+    ( 4, 1, 'Radiografia da coluna'), ( 7, 1, 'Radiografia do joelho'), (14, 1, 'Ressonância do joelho'),
+    (14, 2, 'Hemograma'),             (18, 1, 'Ecocardiograma');
+
+
+
+SELECT
+    *
+FROM
+    pessoa;
+
+
+SELECT
+    *
+FROM
+    medico;
+
+SELECT
+    pe.nome,
+    pa.data_cadastro,
+    DATE_PART('year', AGE(CURRENT_DATE, pe.data_nascimento)) as idade
+FROM
+        paciente AS pa
+    INNER JOIN
+        pessoa AS pe
+    ON pe.id = pa.pessoa_id
+ORDER BY
+    idade;
+
+-- pe.nome, m.crm, e.nome AS especialidade
+SELECT
+    pe.nome,
+    m.crm,
+    e.nome AS especialidade
+FROM
+    pessoa AS pe
+    INNER JOIN medico AS m ON m.pessoa_id = pe.id
+    INNER JOIN especialidade AS e ON e.id = m.especialidade_id;
+
+SELECT
+    pe.id,
+    pe.nome,
+    pa.titular_id
+FROM
+    paciente AS pa INNER JOIN pessoa AS pe ON pe.id = pa.pessoa_id
+WHERE
+    pa.titular_id IS NOT NULL;
+
+
+SELECT
+    pet.id,
+    pet.nome
+FROM
+    paciente AS pat INNER JOIN pessoa AS pet ON pet.id = pat.titular_id;
+
+
+SELECT
+    ped.nome AS dependete,
+    pet.nome AS titular
+FROM
+    paciente AS pad INNER JOIN pessoa AS ped ON ped.id = pad.pessoa_id
+    INNER JOIN paciente AS pat ON pad.pessoa_id = pat.titular_id
+    INNER JOIN pessoa AS pet ON pat.pessoa_id = pet.id;
+
+
+
+
+-- INNER JOIN
+SELECT
+    c.id AS consulta,
+    cv.nome AS convenio,
+    cv.id
+FROM
+    consulta AS c INNER JOIN convenio AS cv ON cv.id = c.convenio_id;
+
+--LEFT JOIN
+SELECT
+    c.id AS consulta,
+    cv.nome AS convenio,
+    cv.id
+FROM
+    consulta AS c LEFT JOIN convenio AS cv ON cv.id = c.convenio_id;
+
+--RIGHT JOIN
+SELECT
+    c.id AS consulta,
+    cv.nome AS convenio,
+    cv.id
+FROM
+    consulta AS c RIGHT JOIN convenio AS cv ON cv.id = c.convenio_id;
+
+--FULL JOIN
+SELECT
+    c.id AS consulta,
+    cv.nome AS convenio,
+    cv.id
+FROM
+    consulta AS c FULL JOIN convenio AS cv ON cv.id = c.convenio_id;
+
+--CROSS JOIN
+SELECT
+    c.id AS consuta,
+    cv.nome AS convenio,
+    c.convenio_id
+FROM
+    consulta AS c CROSS JOIN convenio AS cv;
+
+
+SELECT
+    ROUND(AVG(valor),2) AS media
+FROM
+    consulta;
+
+SELECT
+    c.id,
+    c.data_consulta,
+    c.valor
+FROM
+    consulta AS c
+WHERE
+    c.valor > (SELECT AVG(valor) FROM consulta);
+
+
+SELECT
+    pe.nome
+FROM
+    pessoa AS pe
+WHERE
+    pe.id IN (SELECT paciente_id FROM consulta WHERE convenio_id IS NULL)
+ORDER BY
+    pe.nome;
