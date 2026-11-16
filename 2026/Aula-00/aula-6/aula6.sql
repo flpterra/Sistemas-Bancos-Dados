@@ -1,4 +1,4 @@
--- Active: 1793147537676@@127.0.0.1@5432@db_plano_saude@public
+-- Active: 1793750370993@@127.0.0.1@5432@db_plano_saude@public
 -- Recomeco: primeiro o que depende, depois o que e referenciado
 DROP TABLE IF EXISTS planilha_atendimento;
 DROP VIEW  IF EXISTS vw_dependente;
@@ -304,3 +304,26 @@ WHERE
     pe.id IN (SELECT paciente_id FROM consulta WHERE convenio_id IS NULL)
 ORDER BY
     pe.nome;
+
+
+
+SELECT
+    pe.nome
+FROM
+    paciente AS pa INNER JOIN pessoa AS pe ON pe.id = pa.pessoa_id
+WHERE
+    NOT EXISTS (SELECT 1 FROM consulta AS c WHERE c.paciente_id = pa.pessoa_id);
+
+SELECT
+    paciente_id
+FROM
+    consulta;
+
+SELECT
+    pet.id,
+    pet.nome AS titular,
+    (SELECT COUNT(*) FROM p-aciente AS pad WHERE pad.titular_id = pat.pessoa_id) AS dependentes
+FROM
+    paciente AS pat INNER JOIN pessoa AS pet ON pet.id = pat.pessoa_id
+WHERE
+    pat.titular_id IS NULL;
